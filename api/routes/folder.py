@@ -22,7 +22,7 @@ def get_folder(folder_id: int):
 
             # get subfolders
             cur.execute(
-                "SELECT id, name, color FROM folder WHERE parent_folder_id = %s",
+                "SELECT id, name, color, parent_folder_id FROM folder WHERE parent_folder_id = %s",
                 (folder_id,),
             )  # no need for description
             subfolders = cur.fetchall()

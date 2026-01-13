@@ -19,7 +19,6 @@ def init():
     with get_db() as conn:
         with conn.cursor() as cur:
             # insert users
-            users_inserted = 0
             for index, user in enumerate(USERS):
                 # create user
                 cur.execute(
@@ -37,11 +36,22 @@ def init():
                         index + 1,
                     ),
                 )
+                root_folder_id = cur.lastrowid
 
-                users_inserted += 1
+                # create default subfolder inside root
+                cur.execute(
+                    "INSERT INTO folder (name, color, description, user_id, parent_folder_id) VALUES (%s, %s, %s, %s, %s)",
+                    (
+                        "All Notes",
+                        "#9b59b6",
+                        "Default folder for all notes",
+                        index + 1,
+                        root_folder_id,
+                    ),
+                )
 
             conn.commit()  # commit as one transaction
 
     return {
-        "users_inserted": users_inserted,
+        "root": "folder/1",
     }

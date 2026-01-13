@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_db_pool, close_db_pool
 from routes import migrate, data, folder, note
@@ -17,6 +18,15 @@ app = FastAPI(
     description="A simple note-management system with SQL/NoSQL switch support",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# Add CORS middleware for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # register routes
