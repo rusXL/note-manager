@@ -15,10 +15,7 @@ class FolderBase(BaseModel):
     id: int
     name: str
     color: str
-
-
-class SubFolderBase(FolderBase):
-    parent_folder_id: int
+    parent_folder_id: Optional[int] = None # if present makes it a subfolder
 
 
 class NoteBase(BaseModel):
@@ -35,12 +32,8 @@ class ImageBase(BaseModel):
 # Full models
 class Folder(FolderBase):
     description: Optional[str] = None
-    subfolders: List[SubFolderBase]
+    subfolders: List[FolderBase]
     notes: List[NoteBase]
-
-
-class SubFolder(Folder, SubFolderBase):
-    pass
 
 
 class Note(NoteBase):

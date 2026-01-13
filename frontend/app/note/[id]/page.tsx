@@ -78,6 +78,14 @@ export default function NotePage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold truncate">{note.name}</h1>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/")}
+            className="shrink-0"
+          >
+            Home
+          </Button>
         </div>
       </header>
 
@@ -121,10 +129,6 @@ export default function NotePage() {
         {/* Image */}
         {note.image && (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <ImageIcon className="h-4 w-4" />
-              <span>Attached Image</span>
-            </div>
             <div className="rounded-lg overflow-hidden border border-border">
               <img
                 src={note.image.url}

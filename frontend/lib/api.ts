@@ -1,11 +1,11 @@
 const API_URL = "http://localhost:8000";
 
 // Types matching the backend models
-export interface SubFolderBase {
+export interface FolderBase {
   id: number;
   name: string;
   color: string;
-  parent_folder_id: number;
+  parent_folder_id: number | null;
 }
 
 export interface NoteBase {
@@ -13,12 +13,9 @@ export interface NoteBase {
   name: string;
 }
 
-export interface Folder {
-  id: number;
-  name: string;
-  color: string;
+export interface Folder extends FolderBase {
   description: string | null;
-  subfolders: SubFolderBase[];
+  subfolders: FolderBase[];
   notes: NoteBase[];
 }
 

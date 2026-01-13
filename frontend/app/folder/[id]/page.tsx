@@ -63,7 +63,11 @@ export default function FolderPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.back()}
+            onClick={() =>
+              folder.parent_folder_id
+                ? router.push(`/folder/${folder.parent_folder_id}`)
+                : router.push("/")
+            }
             className="shrink-0"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -76,6 +80,14 @@ export default function FolderPage() {
               </p>
             )}
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/")}
+            className="shrink-0"
+          >
+            Home
+          </Button>
         </div>
 
         {/* Subfolders as tabs */}

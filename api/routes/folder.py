@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from models import Folder, SubFolderBase, NoteBase
+from models import Folder, FolderBase, NoteBase
 from database import get_db
 
 router = APIRouter()
@@ -12,7 +12,7 @@ def get_folder(folder_id: int):
         with conn.cursor(dictionary=True) as cur:
             # get the folder
             cur.execute(
-                "SELECT id, name, color, description FROM folder WHERE id = %s",
+                "SELECT id, name, color, description, parent_folder_id FROM folder WHERE id = %s",
                 (folder_id,),
             )
             folder_data = cur.fetchone()
@@ -35,6 +35,6 @@ def get_folder(folder_id: int):
 
     return Folder(
         **folder_data,
-        subfolders=[SubFolderBase(**sf) for sf in subfolders],
+        subfolders=[FolderBase(**sf) for sf in subfolders],
         notes=[NoteBase(**n) for n in notes],
     )
