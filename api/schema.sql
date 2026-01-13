@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS note (
 CREATE TABLE IF NOT EXISTS task_note (
     note_id INT PRIMARY KEY,
     deadline DATE NOT NULL,
-    priority VARCHAR(100) NOT NULL,
+    priority INT NOT NULL,  -- 0=high, 1=mid, 2=low
     FOREIGN KEY (note_id) REFERENCES note(id)
 );
 

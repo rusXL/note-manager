@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, ListTodo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,7 @@ export function CreateNoteDialog({
   onNoteCreated,
   isTask = false,
 }: CreateNoteDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -61,7 +63,7 @@ export function CreateNoteDialog({
       }
 
       if (formData.priority) {
-        payload.priority = formData.priority as "high" | "mid" | "low";
+        payload.priority = parseInt(formData.priority) as 0 | 1 | 2;
       }
 
       if (formData.imageUrl) {
@@ -71,7 +73,7 @@ export function CreateNoteDialog({
         };
       }
 
-      await createNote(payload);
+      const createdNote = await createNote(payload);
       setOpen(false);
       setFormData({
         name: "",
@@ -82,6 +84,8 @@ export function CreateNoteDialog({
         imageCaption: "",
       });
       onNoteCreated();
+      // Navigate to the created note
+      router.push(`/note/${createdNote.id}`);
     } catch (error) {
       console.error("Failed to create note:", error);
     } finally {
@@ -146,7 +150,7 @@ export function CreateNoteDialog({
           {isTask && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="deadline">Deadline</Label>
+                <Label htmlFor="deadline">Deadline *</Label>
                 <Input
                   id="deadline"
                   type="date"
@@ -154,24 +158,26 @@ export function CreateNoteDialog({
                   onChange={(e) =>
                     setFormData({ ...formData, deadline: e.target.value })
                   }
+                  required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
+                <Label htmlFor="priority">Priority *</Label>
                 <Select
                   value={formData.priority}
                   onValueChange={(value) =>
                     setFormData({ ...formData, priority: value })
                   }
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="mid">Medium</SelectItem>
-                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="0">High</SelectItem>
+                    <SelectItem value="1">Medium</SelectItem>
+                    <SelectItem value="2">Low</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

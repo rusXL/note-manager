@@ -1,13 +1,13 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date
-from enum import Enum
+from enum import IntEnum
 
 
-class Priority(str, Enum):
-    high = "high"
-    mid = "mid"
-    low = "low"
+class Priority(IntEnum):
+    high = 0
+    mid = 1
+    low = 2
 
 
 # Base models

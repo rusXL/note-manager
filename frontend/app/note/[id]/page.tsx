@@ -30,16 +30,29 @@ export default function NotePage() {
     fetchNote();
   }, [noteId]);
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: number) => {
     switch (priority) {
-      case "high":
+      case 0: // high
         return "bg-red-500/10 text-red-500 border-red-500/20";
-      case "mid":
+      case 1: // mid
         return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
-      case "low":
+      case 2: // low
         return "bg-green-500/10 text-green-500 border-green-500/20";
       default:
         return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const getPriorityLabel = (priority: number) => {
+    switch (priority) {
+      case 0:
+        return "High";
+      case 1:
+        return "Medium";
+      case 2:
+        return "Low";
+      default:
+        return "Unknown";
     }
   };
 
@@ -92,7 +105,7 @@ export default function NotePage() {
       {/* Content */}
       <main className="flex-1 p-4 space-y-6 overflow-y-auto">
         {/* Task metadata */}
-        {(note.deadline || note.priority) && (
+        {(note.deadline || note.priority !== null) && (
           <div className="flex flex-wrap gap-3">
             {note.deadline && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent text-sm">
@@ -106,14 +119,16 @@ export default function NotePage() {
                 </span>
               </div>
             )}
-            {note.priority && (
+            {note.priority !== null && (
               <div
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border ${getPriorityColor(
                   note.priority
                 )}`}
               >
                 <Flag className="h-4 w-4" />
-                <span className="capitalize">{note.priority} priority</span>
+                <span className="capitalize">
+                  {getPriorityLabel(note.priority)} priority
+                </span>
               </div>
             )}
           </div>

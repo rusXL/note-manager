@@ -31,7 +31,7 @@ export interface Note {
   folder_id: number;
   content: string;
   deadline: string | null;
-  priority: "high" | "mid" | "low" | null;
+  priority: 0 | 1 | 2 | null;
   image: ImageBase | null;
 }
 
@@ -40,7 +40,7 @@ export interface CreateNotePayload {
   content: string;
   folder_id: number;
   deadline?: string | null;
-  priority?: "high" | "mid" | "low" | null;
+  priority?: 0 | 1 | 2 | null;
   image?: {
     url: string;
     caption?: string | null;
