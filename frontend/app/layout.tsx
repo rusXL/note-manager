@@ -25,9 +25,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-muted py-4`}
       >
-        {children}
+        <div className="relative mx-auto max-w-[430px] min-h-[calc(100vh-2rem)] bg-background shadow-xl rounded-2xl overflow-hidden">
+          {children}
+        </div>
       </body>
     </html>
   );

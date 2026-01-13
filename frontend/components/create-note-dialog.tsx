@@ -92,22 +92,17 @@ export function CreateNoteDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {isTask ? (
-          <Button
-            size="icon"
-            variant="secondary"
-            className="fixed bottom-6 right-24 h-14 w-14 rounded-full shadow-lg"
-          >
+        <Button
+          size="icon"
+          variant={isTask ? "secondary" : "default"}
+          className="h-14 w-14 rounded-full shadow-lg"
+        >
+          {isTask ? (
             <ListTodo className="h-6 w-6" />
-          </Button>
-        ) : (
-          <Button
-            size="icon"
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
-          >
+          ) : (
             <Plus className="h-6 w-6" />
-          </Button>
-        )}
+          )}
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>

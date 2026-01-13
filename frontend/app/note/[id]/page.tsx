@@ -45,7 +45,7 @@ export default function NotePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[calc(100vh-2rem)] flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
       </div>
     );
@@ -53,7 +53,7 @@ export default function NotePage() {
 
   if (error || !note) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center gap-4">
         <p className="text-destructive">{error || "Note not found"}</p>
         <Button variant="outline" onClick={() => router.push("/")}>
           Go Home
@@ -63,7 +63,7 @@ export default function NotePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col min-h-[calc(100vh-2rem)] bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border backdrop-blur-sm bg-background/80">
         <div className="flex items-center gap-3 p-4">
@@ -82,7 +82,7 @@ export default function NotePage() {
       </header>
 
       {/* Content */}
-      <main className="p-4 space-y-6">
+      <main className="flex-1 p-4 space-y-6 overflow-y-auto">
         {/* Task metadata */}
         {(note.deadline || note.priority) && (
           <div className="flex flex-wrap gap-3">

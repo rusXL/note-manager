@@ -53,7 +53,7 @@ export default function FolderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="flex flex-col min-h-[calc(100vh-2rem)] bg-background">
       {/* Header */}
       <header
         className="sticky top-0 z-10 border-b border-border backdrop-blur-sm bg-background/80"
@@ -100,7 +100,7 @@ export default function FolderPage() {
       </header>
 
       {/* Notes list */}
-      <main className="p-4 space-y-3">
+      <main className="flex-1 p-4 space-y-3 overflow-y-auto">
         {folder.notes.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <p>No notes yet</p>
@@ -113,13 +113,15 @@ export default function FolderPage() {
         )}
       </main>
 
-      {/* Floating Action Buttons */}
-      <CreateNoteDialog
-        folderId={folderId}
-        onNoteCreated={fetchFolder}
-        isTask
-      />
-      <CreateNoteDialog folderId={folderId} onNoteCreated={fetchFolder} />
+      {/* Floating Action Buttons - fixed at bottom right */}
+      <div className="absolute bottom-6 right-6 flex gap-4">
+        <CreateNoteDialog
+          folderId={folderId}
+          onNoteCreated={fetchFolder}
+          isTask
+        />
+        <CreateNoteDialog folderId={folderId} onNoteCreated={fetchFolder} />
+      </div>
     </div>
   );
 }

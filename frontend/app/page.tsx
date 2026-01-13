@@ -25,7 +25,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+    <div className="min-h-[calc(100vh-2rem)] flex flex-col items-center justify-center bg-background p-4">
       <div className="text-center space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Note Manager</h1>
