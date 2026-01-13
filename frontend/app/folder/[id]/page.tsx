@@ -113,7 +113,12 @@ export default function FolderPage() {
         )}
       </main>
 
-      {/* Floating Action Button */}
+      {/* Floating Action Buttons */}
+      <CreateNoteDialog
+        folderId={folderId}
+        onNoteCreated={fetchFolder}
+        isTask
+      />
       <CreateNoteDialog folderId={folderId} onNoteCreated={fetchFolder} />
     </div>
   );

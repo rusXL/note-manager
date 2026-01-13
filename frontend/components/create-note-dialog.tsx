@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, ListTodo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,11 +26,13 @@ import { createNote, CreateNotePayload } from "@/lib/api";
 interface CreateNoteDialogProps {
   folderId: number;
   onNoteCreated: () => void;
+  isTask?: boolean;
 }
 
 export function CreateNoteDialog({
   folderId,
   onNoteCreated,
+  isTask = false,
 }: CreateNoteDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -90,18 +92,30 @@ export function CreateNoteDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          size="icon"
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+        {isTask ? (
+          <Button
+            size="icon"
+            variant="secondary"
+            className="fixed bottom-6 right-24 h-14 w-14 rounded-full shadow-lg"
+          >
+            <ListTodo className="h-6 w-6" />
+          </Button>
+        ) : (
+          <Button
+            size="icon"
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Note</DialogTitle>
+          <DialogTitle>{isTask ? "Create Task" : "Create Note"}</DialogTitle>
           <DialogDescription>
-            Add a new note to this folder. Fill in the details below.
+            {isTask
+              ? "Add a new task with deadline and priority."
+              : "Add a new note to this folder."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -113,7 +127,7 @@ export function CreateNoteDialog({
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              placeholder="Note title"
+              placeholder={isTask ? "Task title" : "Note title"}
               required
             />
           </div>
@@ -126,42 +140,48 @@ export function CreateNoteDialog({
               onChange={(e) =>
                 setFormData({ ...formData, content: e.target.value })
               }
-              placeholder="Write your note here..."
+              placeholder={
+                isTask ? "Task description..." : "Write your note here..."
+              }
               rows={4}
               required
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="deadline">Deadline (optional)</Label>
-            <Input
-              id="deadline"
-              type="date"
-              value={formData.deadline}
-              onChange={(e) =>
-                setFormData({ ...formData, deadline: e.target.value })
-              }
-            />
-          </div>
+          {isTask && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="deadline">Deadline</Label>
+                <Input
+                  id="deadline"
+                  type="date"
+                  value={formData.deadline}
+                  onChange={(e) =>
+                    setFormData({ ...formData, deadline: e.target.value })
+                  }
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="priority">Priority (optional)</Label>
-            <Select
-              value={formData.priority}
-              onValueChange={(value) =>
-                setFormData({ ...formData, priority: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="mid">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select
+                  value={formData.priority}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, priority: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="mid">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="imageUrl">Image URL (optional)</Label>
@@ -199,7 +219,7 @@ export function CreateNoteDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Note"}
+              {loading ? "Creating..." : isTask ? "Create Task" : "Create Note"}
             </Button>
           </div>
         </form>

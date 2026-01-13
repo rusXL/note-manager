@@ -89,7 +89,13 @@ export default function NotePage() {
             {note.deadline && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent text-sm">
                 <Calendar className="h-4 w-4" />
-                <span>{new Date(note.deadline).toLocaleDateString()}</span>
+                <span>
+                  {new Date(note.deadline).toLocaleDateString("de-AT", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
+                </span>
               </div>
             )}
             {note.priority && (
