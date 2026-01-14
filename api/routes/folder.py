@@ -1,21 +1,35 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 from models import Folder, FolderBase, NoteBase, Priority
+from bson import ObjectId
 
-from database import get_db
+from database import get_db, is_sql_mode
 
 router = APIRouter()
 
 
 @router.get("/folder/{folder_id}", response_model=Folder)
 def get_folder(
-    folder_id: int,
+    folder_id: str,
     with_image: bool = False,
     with_caption: bool = False,
     priority: Optional[Priority] = None,
 ):
 
     """Get folder name, color, subfolders and notes."""
+    if is_sql_mode():
+        return _get_folder_sql(int(folder_id), with_image, with_caption, priority)
+    else:
+        return _get_folder_mongo(folder_id, with_image, with_caption, priority)
+
+
+def _get_folder_sql(
+    folder_id: int,
+    with_image: bool,
+    with_caption: bool,
+    priority: Optional[Priority],
+) -> Folder:
+    """Get folder from SQL database."""
     with get_db() as conn:
         with conn.cursor(dictionary=True) as cur:
             # get the folder
@@ -56,9 +70,85 @@ def get_folder(
             cur.execute(full_query, tuple(params))
             notes = cur.fetchall()
 
-
     return Folder(
-        **folder_data,
-        subfolders=[FolderBase(**sf) for sf in subfolders],
-        notes=[NoteBase(**n) for n in notes],
+        id=str(folder_data["id"]),
+        name=folder_data["name"],
+        color=folder_data["color"],
+        description=folder_data.get("description"),
+        parent_folder_id=str(folder_data["parent_folder_id"]) if folder_data.get("parent_folder_id") else None,
+        subfolders=[
+            FolderBase(
+                id=str(sf["id"]),
+                name=sf["name"],
+                color=sf["color"],
+                parent_folder_id=str(sf["parent_folder_id"]) if sf.get("parent_folder_id") else None,
+            )
+            for sf in subfolders
+        ],
+        notes=[NoteBase(id=str(n["id"]), name=n["name"]) for n in notes],
     )
+
+
+def _get_folder_mongo(
+    folder_id: str,
+    with_image: bool,
+    with_caption: bool,
+    priority: Optional[Priority],
+) -> Folder:
+    """Get folder from MongoDB database."""
+    with get_db() as db:
+        try:
+            obj_id = ObjectId(folder_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid folder ID format")
+
+        folder_doc = db.folders.find_one({"_id": obj_id})
+
+        if not folder_doc:
+            raise HTTPException(status_code=404, detail="folder not found")
+
+        # Get embedded subfolders from folder document
+        subfolders_data = folder_doc.get("folders", [])
+        subfolders = []
+        for sf in subfolders_data:
+            subfolders.append(
+                FolderBase(
+                    id=str(sf["_id"]),
+                    name=sf["name"],
+                    color=sf["color"],
+                    parent_folder_id=str(folder_doc["_id"]),
+                )
+            )
+
+        # Get notes - need to query notes collection with filters
+        note_query = {"parent_folder": obj_id}
+
+        # Build pipeline for filtering
+        pipeline = [{"$match": note_query}]
+
+        if with_image or with_caption:
+            # Filter for notes that have image field
+            pipeline.append({"$match": {"image": {"$exists": True, "$ne": None}}})
+            if with_caption:
+                pipeline.append({"$match": {"image.caption": {"$exists": True, "$ne": None}}})
+
+        if priority is not None:
+            pipeline.append({"$match": {"priority": priority.value}})
+
+        # Project only id and name
+        pipeline.append({"$project": {"_id": 1, "name": 1}})
+
+        notes_cursor = db.notes.aggregate(pipeline)
+        notes = []
+        for n in notes_cursor:
+            notes.append(NoteBase(id=str(n["_id"]), name=n["name"]))
+
+        return Folder(
+            id=str(folder_doc["_id"]),
+            name=folder_doc["name"],
+            color=folder_doc["color"],
+            description=folder_doc.get("description"),
+            parent_folder_id=str(folder_doc["parent_folder_id"]) if folder_doc.get("parent_folder_id") else None,
+            subfolders=subfolders,
+            notes=notes,
+        )

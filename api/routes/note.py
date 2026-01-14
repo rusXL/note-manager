@@ -1,12 +1,22 @@
 from fastapi import APIRouter, HTTPException
 from models import Note, ImageBase
-from database import get_db
+from database import get_db, is_sql_mode
+from bson import ObjectId
+from datetime import date
 
 router = APIRouter()
 
 
 @router.get("/note/{note_id}", response_model=Note)
-def get_note(note_id: int):
+def get_note(note_id: str):
+    if is_sql_mode():
+        return _get_note_sql(int(note_id))
+    else:
+        return _get_note_mongo(note_id)
+
+
+def _get_note_sql(note_id: int) -> Note:
+    """Get note from SQL database."""
     with get_db() as conn:
         with conn.cursor(dictionary=True) as cur:
             # get note with optional task note fields
@@ -33,14 +43,72 @@ def get_note(note_id: int):
             image = cur.fetchone()
 
             return Note(
-                **note,
-                image=ImageBase(**image) if image else None,
+                id=str(note["id"]),
+                name=note["name"],
+                content=note["content"],
+                folder_id=str(note["folder_id"]),
+                deadline=note.get("deadline"),
+                priority=note.get("priority"),
+                image=ImageBase(
+                    note_id=str(image["note_id"]),
+                    url=image["url"],
+                    caption=image.get("caption"),
+                ) if image else None,
             )
+
+
+def _get_note_mongo(note_id: str) -> Note:
+    """Get note from MongoDB database."""
+    with get_db() as db:
+        try:
+            obj_id = ObjectId(note_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid note ID format")
+
+        note_doc = db.notes.find_one({"_id": obj_id})
+
+        if not note_doc:
+            raise HTTPException(status_code=404, detail="Note not found")
+
+        # Parse deadline if present
+        deadline = None
+        if note_doc.get("deadline"):
+            if isinstance(note_doc["deadline"], str):
+                deadline = date.fromisoformat(note_doc["deadline"])
+            else:
+                deadline = note_doc["deadline"]
+
+        # Parse image if present
+        image = None
+        if note_doc.get("image"):
+            image = ImageBase(
+                note_id=str(note_doc["_id"]),
+                url=note_doc["image"]["url"],
+                caption=note_doc["image"].get("caption"),
+            )
+
+        return Note(
+            id=str(note_doc["_id"]),
+            name=note_doc["name"],
+            folder_id=str(note_doc["parent_folder"]),
+            content=note_doc["content"],
+            deadline=deadline,
+            priority=note_doc.get("priority"),
+            image=image,
+        )
 
 
 @router.post("/note", response_model=Note)
 def add_note(note_data: Note):
     """Create a new note with name, content, optional image and task note fields in a folder."""
+    if is_sql_mode():
+        return _add_note_sql(note_data)
+    else:
+        return _add_note_mongo(note_data)
+
+
+def _add_note_sql(note_data: Note) -> Note:
+    """Add note to SQL database."""
     with get_db() as conn:
         with conn.cursor() as cur:
             # verify folder exists
@@ -75,4 +143,50 @@ def add_note(note_data: Note):
 
             conn.commit()
 
-            return get_note(note_id=note_id)
+            return get_note(note_id=str(note_id))
+
+
+def _add_note_mongo(note_data: Note) -> Note:
+    """Add note to MongoDB database."""
+    with get_db() as db:
+        # Verify folder exists
+        try:
+            folder_id = ObjectId(note_data.folder_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid folder ID format")
+
+        folder = db.folders.find_one({"_id": folder_id})
+        if not folder:
+            raise HTTPException(status_code=404, detail="Folder not found")
+
+        # Build note document
+        note_doc = {
+            "name": note_data.name,
+            "content": note_data.content,
+            "parent_folder": folder_id,
+        }
+
+        # Add task note fields if provided
+        if note_data.deadline is not None:
+            note_doc["deadline"] = str(note_data.deadline)
+        if note_data.priority is not None:
+            note_doc["priority"] = note_data.priority.value
+
+        # Add image if provided
+        if note_data.image:
+            note_doc["image"] = {
+                "url": note_data.image.url,
+                "caption": note_data.image.caption,
+            }
+
+        # Insert note
+        result = db.notes.insert_one(note_doc)
+        note_id = result.inserted_id
+
+        # Update folder with note reference
+        db.folders.update_one(
+            {"_id": folder_id},
+            {"$push": {"notes": {"_id": note_id, "name": note_data.name}}},
+        )
+
+        return get_note(note_id=str(note_id))

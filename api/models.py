@@ -12,19 +12,19 @@ class Priority(IntEnum):
 
 # Base models
 class FolderBase(BaseModel):
-    id: int
+    id: Optional[str] = None
     name: str
     color: str
-    parent_folder_id: Optional[int] = None # if present makes it a subfolder
+    parent_folder_id: Optional[str] = None  # if present makes it a subfolder
 
 
 class NoteBase(BaseModel):
-    id: Optional[int] = None  # None for note add
+    id: Optional[str] = None  # None for note add
     name: str
 
 
 class ImageBase(BaseModel):
-    note_id: Optional[int] = None  # None for image add
+    note_id: Optional[str] = None  # None for image add
     url: str
     caption: Optional[str] = None
 
@@ -32,12 +32,12 @@ class ImageBase(BaseModel):
 # Full models
 class Folder(FolderBase):
     description: Optional[str] = None
-    subfolders: List[FolderBase]
-    notes: List[NoteBase]
+    subfolders: List[FolderBase] = []
+    notes: List[NoteBase] = []
 
 
 class Note(NoteBase):
-    folder_id: int
+    folder_id: str
     content: str
     # TaskNote
     deadline: Optional[date] = None
