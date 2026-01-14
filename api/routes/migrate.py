@@ -37,7 +37,7 @@ def migrate():
 
     return {
         "mode": new_mode,
-        "root": f"folder/{root_folder_id}" if root_folder_id else None,
+        "root": f"folder/{str(root_folder_id)}" if root_folder_id else None,
         "migrated": {
             "users": len(data["users"]),
             "folders": len(data["folders"]),
@@ -117,7 +117,7 @@ def _extract_from_mongo():
                 "id": str(note["_id"]),
                 "name": note["name"],
                 "content": note["content"],
-                "folder_id": str(note["parent_folder"]),
+                "folder_id": str(note["folder_id"]),
                 "deadline": note.get("deadline"),
                 "priority": note.get("priority"),
                 "image_url": (
@@ -318,7 +318,7 @@ def _insert_to_mongo(data):
             note_doc = {
                 "name": note["name"],
                 "content": note["content"],
-                "parent_folder": folder_id,
+                "folder_id": folder_id,
             }
 
             # Add task fields if present

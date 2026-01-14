@@ -81,7 +81,7 @@ def init_db_pool():
 
     if _use_sql:
         _connection_pool = pooling.MySQLConnectionPool(
-            pool_name="note_manager_pool", pool_size=5, **DB_CONFIG
+            pool_name="note_manager_pool", pool_size=5, autocommit=True, **DB_CONFIG
         )
     else:
         _mongo_client = pymongo.MongoClient(
@@ -119,7 +119,6 @@ def get_db():
         db = _mongo_client[MONGO_CONFIG["database"]]
         yield db
         # no explicit close needed for mongo db object or client here
-
 
 
 def toggle_db_mode():

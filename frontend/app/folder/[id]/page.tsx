@@ -146,20 +146,6 @@ export default function FolderPage() {
           </Label>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="with-caption"
-            checked={withCaption}
-            onCheckedChange={(checked) => setWithCaption(checked as boolean)}
-          />
-          <Label
-            htmlFor="with-caption"
-            className="whitespace-nowrap cursor-pointer"
-          >
-            Caption
-          </Label>
-        </div>
-
         <div className="flex items-center gap-2 ml-auto">
           <Label className="whitespace-nowrap">Priority:</Label>
           <Select value={priority} onValueChange={setPriority}>

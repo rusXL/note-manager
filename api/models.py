@@ -10,37 +10,63 @@ class Priority(IntEnum):
     low = 2
 
 
-# Base models
-class FolderBase(BaseModel):
-    id: Optional[str] = None
-    name: str
-    color: str
-    parent_folder_id: Optional[str] = None  # if present makes it a subfolder
-
-
-class NoteBase(BaseModel):
-    id: Optional[str] = None  # None for note add
+# User
+class CreateUser(BaseModel):
+    email: str
+    password: str
     name: str
 
 
-class ImageBase(BaseModel):
-    note_id: Optional[str] = None  # None for image add
+# Image
+class Image(BaseModel):
     url: str
     caption: Optional[str] = None
 
 
-# Full models
-class Folder(FolderBase):
-    description: Optional[str] = None
-    subfolders: List[FolderBase] = []
-    notes: List[NoteBase] = []
+# Note
+class CreateNote(BaseModel):
+    name: str
+    folder_id: str
+    content: str
+    # task note
+    deadline: Optional[date] = None
+    priority: Optional[Priority] = None
+    # image
+    image: Optional[Image] = None
+
+
+class NoteBase(BaseModel):
+    id: str
+    name: str
 
 
 class Note(NoteBase):
     folder_id: str
     content: str
-    # TaskNote
+    # task note
     deadline: Optional[date] = None
     priority: Optional[Priority] = None
-    # Image
-    image: Optional[ImageBase] = None
+    # image
+    image: Optional[Image] = None
+
+
+# Folder
+class CreateFolder(BaseModel):
+    name: str
+    color: str
+    description: str
+    user_id: str
+    parent_folder_id: Optional[str] = None
+
+
+class FolderBase(BaseModel):
+    id: str
+    name: str
+    color: str
+
+
+class Folder(FolderBase):
+    parent_folder_id: Optional[str] = None  # none for root
+    description: Optional[str] = None
+    subfolders: List[FolderBase] = []
+    notes: List[NoteBase] = []
