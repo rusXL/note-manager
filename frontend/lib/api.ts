@@ -53,8 +53,22 @@ export async function initData(): Promise<{ root: string }> {
   return res.json();
 }
 
-export async function getFolder(id: number): Promise<Folder> {
-  const res = await fetch(`${API_URL}/folder/${id}`);
+export async function getFolder(
+  id: number,
+  filters?: {
+    with_image?: boolean;
+    with_caption?: boolean;
+    priority?: number | null;
+  }
+): Promise<Folder> {
+  const params = new URLSearchParams();
+  if (filters?.with_image) params.append("with_image", "true");
+  if (filters?.with_caption) params.append("with_caption", "true");
+  if (filters?.priority !== undefined && filters?.priority !== null) {
+    params.append("priority", filters.priority.toString());
+  }
+
+  const res = await fetch(`${API_URL}/folder/${id}?${params.toString()}`);
   if (!res.ok) throw new Error("Failed to fetch folder");
   return res.json();
 }
