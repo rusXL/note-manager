@@ -1,6 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from database import get_db, init_db
 from auth import hash_password
+from faker import Faker
+from models import Note, ImageBase, Priority
+from .note import add_note
+from datetime import date
+import random
+
 
 router = APIRouter()
 
@@ -15,6 +21,8 @@ USERS = [
 def init():
     """Initialize tables and load hardcoded data (users + default folders)."""
     init_db()
+    fake = Faker()
+    root_folder_id = None
 
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -50,7 +58,42 @@ def init():
                     ),
                 )
 
-            conn.commit()  # commit as one transaction
+                conn.commit()
+
+    # student 2 - use case pre-condition
+    # 1. Create a note without an image
+    add_note(
+        Note(
+            name=fake.sentence(nb_words=4),
+            content=fake.text(),
+            folder_id=root_folder_id,
+        )
+    )
+
+    # 2. create a note with an image but no caption (no caption)
+    add_note(
+        Note(
+            name=fake.sentence(nb_words=4),
+            content=fake.text(),
+            folder_id=root_folder_id,
+            image=ImageBase(
+                url=f"https://picsum.photos/seed/{random.randint(1, 1000)}/800/600",
+                caption=None,
+            ),
+        )
+    )
+
+    # student 1 - use case pre-condition
+    # 1. Create a task note with a low priority
+    add_note(
+        Note(
+            name=fake.sentence(nb_words=4),
+            content=fake.text(),
+            folder_id=root_folder_id,
+            priority=Priority.low,
+            deadline=date.today(),
+        )
+    )
 
     return {
         "root": "folder/1",
