@@ -79,7 +79,7 @@ def _init_sql_data(fake: Faker):
         )
     )
 
-    # 2. create a note with an image but no caption (no caption)
+    # 2. create a note with an image but no caption
     add_note(
         Note(
             name=fake.sentence(nb_words=4),
@@ -111,7 +111,6 @@ def _init_sql_data(fake: Faker):
 
 def _init_mongo_data(fake: Faker):
     """Initialize MongoDB database with mock data."""
-    from bson import ObjectId
 
     with get_db() as db:
         # Create user
@@ -152,13 +151,29 @@ def _init_mongo_data(fake: Faker):
         # Update root folder with subfolder reference
         db.folders.update_one(
             {"_id": root_folder_id},
-            {"$push": {"folders": {"_id": subfolder_id, "name": "All Notes", "color": "#9b59b6"}}},
+            {
+                "$push": {
+                    "folders": {
+                        "_id": subfolder_id,
+                        "name": "All Notes",
+                        "color": "#9b59b6",
+                    }
+                }
+            },
         )
 
         # Update user with folder reference
         db.users.update_one(
             {"_id": user_id},
-            {"$push": {"folders": {"_id": root_folder_id, "name": "Root", "color": "#3498db"}}},
+            {
+                "$push": {
+                    "folders": {
+                        "_id": root_folder_id,
+                        "name": "Root",
+                        "color": "#3498db",
+                    }
+                }
+            },
         )
 
         # Note 1: plain note without image
@@ -211,12 +226,10 @@ def _init_mongo_data(fake: Faker):
                             {
                                 "_id": note2_id,
                                 "name": note2_name,
-                                "image": note2_doc["image"],
                             },
                             {
                                 "_id": note3_id,
                                 "name": note3_name,
-                                "priority": note3_doc["priority"],
                             },
                         ]
                     }

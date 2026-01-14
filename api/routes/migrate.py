@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from database import toggle_db_mode, get_db_mode, get_db, is_sql_mode, init_db
-from bson import ObjectId
 
 router = APIRouter()
 
@@ -104,9 +103,11 @@ def _extract_from_mongo():
                     "color": folder["color"],
                     "description": folder.get("description"),
                     "user_id": str(folder["user_id"]),
-                    "parent_folder_id": str(folder["parent_folder_id"])
-                    if folder.get("parent_folder_id")
-                    else None,
+                    "parent_folder_id": (
+                        str(folder["parent_folder_id"])
+                        if folder.get("parent_folder_id")
+                        else None
+                    ),
                 }
             )
 
@@ -119,10 +120,12 @@ def _extract_from_mongo():
                 "folder_id": str(note["parent_folder"]),
                 "deadline": note.get("deadline"),
                 "priority": note.get("priority"),
-                "image_url": note.get("image", {}).get("url") if note.get("image") else None,
-                "image_caption": note.get("image", {}).get("caption")
-                if note.get("image")
-                else None,
+                "image_url": (
+                    note.get("image", {}).get("url") if note.get("image") else None
+                ),
+                "image_caption": (
+                    note.get("image", {}).get("caption") if note.get("image") else None
+                ),
             }
             data["notes"].append(note_data)
 
@@ -217,6 +220,7 @@ def _insert_to_sql(data):
             conn.commit()
 
     return folder_id_map
+
 
 def _insert_to_mongo(data):
     """Insert extracted data into MongoDB database."""
@@ -339,6 +343,7 @@ def _insert_to_mongo(data):
             )
 
     return folder_id_map
+
 
 @router.get("/mode")
 def get_mode():

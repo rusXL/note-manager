@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from models import Note, ImageBase
 from database import get_db, is_sql_mode
-from bson import ObjectId
 from datetime import date
 
 router = APIRouter()
@@ -49,23 +48,22 @@ def _get_note_sql(note_id: int) -> Note:
                 folder_id=str(note["folder_id"]),
                 deadline=note.get("deadline"),
                 priority=note.get("priority"),
-                image=ImageBase(
-                    note_id=str(image["note_id"]),
-                    url=image["url"],
-                    caption=image.get("caption"),
-                ) if image else None,
+                image=(
+                    ImageBase(
+                        note_id=str(image["note_id"]),
+                        url=image["url"],
+                        caption=image.get("caption"),
+                    )
+                    if image
+                    else None
+                ),
             )
 
 
 def _get_note_mongo(note_id: str) -> Note:
     """Get note from MongoDB database."""
     with get_db() as db:
-        try:
-            obj_id = ObjectId(note_id)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid note ID format")
-
-        note_doc = db.notes.find_one({"_id": obj_id})
+        note_doc = db.notes.find_one({"_id": note_id})
 
         if not note_doc:
             raise HTTPException(status_code=404, detail="Note not found")
@@ -130,7 +128,11 @@ def _add_note_sql(note_data: Note) -> Note:
                     (
                         note_id,
                         note_data.deadline,
-                        note_data.priority.value if note_data.priority is not None else None,
+                        (
+                            note_data.priority.value
+                            if note_data.priority is not None
+                            else None
+                        ),
                     ),
                 )
 
@@ -149,13 +151,7 @@ def _add_note_sql(note_data: Note) -> Note:
 def _add_note_mongo(note_data: Note) -> Note:
     """Add note to MongoDB database."""
     with get_db() as db:
-        # Verify folder exists
-        try:
-            folder_id = ObjectId(note_data.folder_id)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid folder ID format")
-
-        folder = db.folders.find_one({"_id": folder_id})
+        folder = db.folders.find_one({"_id": note_data.folder_id})
         if not folder:
             raise HTTPException(status_code=404, detail="Folder not found")
 
@@ -163,7 +159,7 @@ def _add_note_mongo(note_data: Note) -> Note:
         note_doc = {
             "name": note_data.name,
             "content": note_data.content,
-            "parent_folder": folder_id,
+            "parent_folder": note_data.folder_id,
         }
 
         # Add task note fields if provided
@@ -185,7 +181,7 @@ def _add_note_mongo(note_data: Note) -> Note:
 
         # Update folder with note reference
         db.folders.update_one(
-            {"_id": folder_id},
+            {"_id": note_data.folder_id},
             {"$push": {"notes": {"_id": note_id, "name": note_data.name}}},
         )
 

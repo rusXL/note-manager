@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 from models import Folder, FolderBase, NoteBase, Priority
-from bson import ObjectId
 
 from database import get_db, is_sql_mode
 
@@ -15,7 +14,6 @@ def get_folder(
     with_caption: bool = False,
     priority: Optional[Priority] = None,
 ):
-
     """Get folder name, color, subfolders and notes."""
     if is_sql_mode():
         return _get_folder_sql(int(folder_id), with_image, with_caption, priority)
@@ -49,7 +47,7 @@ def _get_folder_sql(
             )  # no need for description
             subfolders = cur.fetchall()
 
-            # get notes
+            # get notes (with filters)
             query = "SELECT n.id, n.name FROM note n"
             params = [folder_id]
             joins = []
@@ -75,13 +73,19 @@ def _get_folder_sql(
         name=folder_data["name"],
         color=folder_data["color"],
         description=folder_data.get("description"),
-        parent_folder_id=str(folder_data["parent_folder_id"]) if folder_data.get("parent_folder_id") else None,
+        parent_folder_id=(
+            str(folder_data["parent_folder_id"])
+            if folder_data.get("parent_folder_id")
+            else None
+        ),
         subfolders=[
             FolderBase(
                 id=str(sf["id"]),
                 name=sf["name"],
                 color=sf["color"],
-                parent_folder_id=str(sf["parent_folder_id"]) if sf.get("parent_folder_id") else None,
+                parent_folder_id=(
+                    str(sf["parent_folder_id"]) if sf.get("parent_folder_id") else None
+                ),
             )
             for sf in subfolders
         ],
@@ -97,17 +101,12 @@ def _get_folder_mongo(
 ) -> Folder:
     """Get folder from MongoDB database."""
     with get_db() as db:
-        try:
-            obj_id = ObjectId(folder_id)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid folder ID format")
-
-        folder_doc = db.folders.find_one({"_id": obj_id})
+        folder_doc = db.folders.find_one({"_id": folder_id})
 
         if not folder_doc:
             raise HTTPException(status_code=404, detail="folder not found")
 
-        # Get embedded subfolders from folder document
+        # get embedded basic subfolders
         subfolders_data = folder_doc.get("folders", [])
         subfolders = []
         for sf in subfolders_data:
@@ -121,7 +120,7 @@ def _get_folder_mongo(
             )
 
         # Get notes - need to query notes collection with filters
-        note_query = {"parent_folder": obj_id}
+        note_query = {"parent_folder": folder_id}
 
         # Build pipeline for filtering
         pipeline = [{"$match": note_query}]
@@ -130,7 +129,9 @@ def _get_folder_mongo(
             # Filter for notes that have image field
             pipeline.append({"$match": {"image": {"$exists": True, "$ne": None}}})
             if with_caption:
-                pipeline.append({"$match": {"image.caption": {"$exists": True, "$ne": None}}})
+                pipeline.append(
+                    {"$match": {"image.caption": {"$exists": True, "$ne": None}}}
+                )
 
         if priority is not None:
             pipeline.append({"$match": {"priority": priority.value}})
@@ -148,7 +149,11 @@ def _get_folder_mongo(
             name=folder_doc["name"],
             color=folder_doc["color"],
             description=folder_doc.get("description"),
-            parent_folder_id=str(folder_doc["parent_folder_id"]) if folder_doc.get("parent_folder_id") else None,
+            parent_folder_id=(
+                str(folder_doc["parent_folder_id"])
+                if folder_doc.get("parent_folder_id")
+                else None
+            ),
             subfolders=subfolders,
             notes=notes,
         )
