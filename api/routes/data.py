@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from database import init_db
 from faker import Faker
 from models import CreateNote, Image, Priority, CreateFolder, CreateUser
+from auth import hash_password
 from .note import add_note
 from .folder import add_folder
 from .user import add_user
@@ -20,7 +21,7 @@ def init():
     fake = Faker()
 
     user_id = add_user(
-        CreateUser(name="Alice", email="alice@example.com", password="password")
+        CreateUser(name="Alice", email="alice@example.com", password=hash_password("password"))
     )["id"]
 
     root_folder_id = add_folder(
