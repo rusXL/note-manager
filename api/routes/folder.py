@@ -106,28 +106,33 @@ def _get_folder_mongo(
                 )
             )
 
-        # TODO: change to query from embeddings if no filters provided
+        # use embedded notes when no filters (faster), query collection when filters applied
+        if not with_image and priority is None:
+            notes_data = folder_doc.get("notes", [])
+            notes = [
+                NoteBase(id=str(n["_id"]), name=n["name"])
+                for n in notes_data
+            ]
+        else:
+            note_query = {"folder_id": ObjectId(folder_id)}
 
-        # get notes (embedded if no filters)
-        note_query = {"folder_id": ObjectId(folder_id)}
+            # build pipeline for filtering
+            pipeline = [{"$match": note_query}]
 
-        # build pipeline for filtering
-        pipeline = [{"$match": note_query}]
+            if with_image:
+                # filter for notes that have image
+                pipeline.append({"$match": {"image": {"$exists": True, "$ne": None}}})
 
-        if with_image:
-            # filter for notes that have image
-            pipeline.append({"$match": {"image": {"$exists": True, "$ne": None}}})
+            if priority is not None:
+                pipeline.append({"$match": {"priority": priority.value}})
 
-        if priority is not None:
-            pipeline.append({"$match": {"priority": priority.value}})
+            pipeline.append({"$project": {"_id": 1, "name": 1}})
 
-        # Project only id and name
-        pipeline.append({"$project": {"_id": 1, "name": 1}})
-
-        notes_cursor = db.notes.aggregate(pipeline)
-        notes = []
-        for n in notes_cursor:
-            notes.append(NoteBase(id=str(n["_id"]), name=n["name"]))
+            notes_cursor = db.notes.aggregate(pipeline)
+            notes = [
+                NoteBase(id=str(n["_id"]), name=n["name"])
+                for n in notes_cursor
+            ]
 
         return Folder(
             id=str(folder_doc["_id"]),
