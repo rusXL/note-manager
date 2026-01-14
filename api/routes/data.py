@@ -204,9 +204,20 @@ def _init_mongo_data(fake: Faker):
                 "$push": {
                     "notes": {
                         "$each": [
-                            {"_id": note1_id, "name": note1_name},
-                            {"_id": note2_id, "name": note2_name},
-                            {"_id": note3_id, "name": note3_name},
+                            {
+                                "_id": note1_id,
+                                "name": note1_name,
+                            },
+                            {
+                                "_id": note2_id,
+                                "name": note2_name,
+                                "image": note2_doc["image"],
+                            },
+                            {
+                                "_id": note3_id,
+                                "name": note3_name,
+                                "priority": note3_doc["priority"],
+                            },
                         ]
                     }
                 }

@@ -88,3 +88,9 @@ export async function createNote(data: CreateNotePayload): Promise<Note> {
   if (!res.ok) throw new Error("Failed to create note");
   return res.json();
 }
+
+export async function migrateData(): Promise<{ root: string; mode: string }> {
+  const res = await fetch(`${API_URL}/migrate`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to migrate data");
+  return res.json();
+}
