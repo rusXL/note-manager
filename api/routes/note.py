@@ -59,7 +59,11 @@ def add_note(note_data: Note):
             if note_data.deadline is not None or note_data.priority is not None:
                 cur.execute(
                     "INSERT INTO task_note (note_id, deadline, priority) VALUES (%s, %s, %s)",
-                    (note_id, note_data.deadline, note_data.priority),
+                    (
+                        note_id,
+                        note_data.deadline,
+                        note_data.priority.value if note_data.priority is not None else None,
+                    ),
                 )
 
             # if image provided, attach it
