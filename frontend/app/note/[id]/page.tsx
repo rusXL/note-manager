@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export default function NotePage() {
   const params = useParams();
   const router = useRouter();
-  const noteId = Number(params.id);
+  const noteId = params.id as string;
 
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);

@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 export default function FolderPage() {
   const params = useParams();
   const router = useRouter();
-  const folderId = Number(params.id);
+  const folderId = params.id as string;
 
   const [folder, setFolder] = useState<Folder | null>(null);
   const [loading, setLoading] = useState(true);

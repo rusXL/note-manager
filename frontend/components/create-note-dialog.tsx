@@ -25,7 +25,7 @@ import {
 import { createNote, CreateNotePayload } from "@/lib/api";
 
 interface CreateNoteDialogProps {
-  folderId: number;
+  folderId: string;
   onNoteCreated: () => void;
   isTask?: boolean;
 }

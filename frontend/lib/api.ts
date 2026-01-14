@@ -2,14 +2,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Types matching the backend models
 export interface FolderBase {
-  id: number;
+  id: string;
   name: string;
   color: string;
-  parent_folder_id: number | null;
+  parent_folder_id: string | null;
 }
 
 export interface NoteBase {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -20,15 +20,15 @@ export interface Folder extends FolderBase {
 }
 
 export interface ImageBase {
-  note_id: number | null;
+  note_id: string | null;
   url: string;
   caption: string | null;
 }
 
 export interface Note {
-  id: number;
+  id: string;
   name: string;
-  folder_id: number;
+  folder_id: string;
   content: string;
   deadline: string | null;
   priority: 0 | 1 | 2 | null;
@@ -38,7 +38,7 @@ export interface Note {
 export interface CreateNotePayload {
   name: string;
   content: string;
-  folder_id: number;
+  folder_id: string;
   deadline?: string | null;
   priority?: 0 | 1 | 2 | null;
   image?: {
@@ -54,7 +54,7 @@ export async function initData(): Promise<{ root: string }> {
 }
 
 export async function getFolder(
-  id: number,
+  id: string,
   filters?: {
     with_image?: boolean;
     with_caption?: boolean;
@@ -73,7 +73,7 @@ export async function getFolder(
   return res.json();
 }
 
-export async function getNote(id: number): Promise<Note> {
+export async function getNote(id: string): Promise<Note> {
   const res = await fetch(`${API_URL}/note/${id}`);
   if (!res.ok) throw new Error("Failed to fetch note");
   return res.json();

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 
 interface NoteItemProps {
-  id: number;
+  id: string;
   name: string;
 }
 
