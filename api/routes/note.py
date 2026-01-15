@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional, List
-from models import Note, NoteBase, Image, CreateNote, Priority
+from models import Note, NoteBase, NoteWithDetails, Image, CreateNote, Priority
 from database import get_db, is_sql_mode
 from bson import ObjectId
 
@@ -86,7 +86,7 @@ def _get_note_mongo(note_id: str) -> Note:
         )
 
 
-@router.get("/notes", response_model=List[NoteBase])
+@router.get("/notes", response_model=List[NoteWithDetails])
 def get_all_notes(
     with_image: bool = False,
     with_caption: bool = False,
@@ -103,43 +103,61 @@ def _get_all_notes_sql(
     with_image: bool,
     with_caption: bool,
     priority: Optional[Priority],
-) -> List[NoteBase]:
+) -> List[NoteWithDetails]:
     """Get all notes from SQL database with filters."""
     with get_db() as conn:
         with conn.cursor(dictionary=True) as cur:
-            query = "SELECT DISTINCT n.id, n.name FROM note n"
-            joins = []
+            query = """
+                SELECT DISTINCT n.id, n.name, n.content,
+                       f.name AS folder_name, u.name AS user_name,
+                       t.deadline, t.priority,
+                       img.url AS image_url, img.caption AS image_caption
+                FROM note n
+                JOIN folder f ON n.folder_id = f.id
+                JOIN user u ON f.user_id = u.id
+                LEFT JOIN task_note t ON n.id = t.note_id
+                LEFT JOIN image img ON n.id = img.note_id
+            """
             conditions = []
             params = []
 
             if with_image:
-                joins.append("JOIN image i ON n.id = i.note_id")
+                conditions.append("img.url IS NOT NULL")
 
             if with_caption:
-                joins.append("JOIN image ic ON n.id = ic.note_id")
-                conditions.append("ic.caption IS NOT NULL AND ic.caption != ''")
+                conditions.append("img.caption IS NOT NULL AND img.caption != ''")
 
             if priority is not None:
-                joins.append("JOIN task_note t ON n.id = t.note_id")
                 conditions.append("t.priority = %s")
                 params.append(priority.value)
 
-            if joins:
-                query += " " + " ".join(joins)
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
 
             cur.execute(query, tuple(params))
             notes = cur.fetchall()
 
-            return [NoteBase(id=str(n["id"]), name=n["name"]) for n in notes]
+            return [
+                NoteWithDetails(
+                    id=str(n["id"]),
+                    name=n["name"],
+                    content=n["content"],
+                    folder_name=n["folder_name"],
+                    user_name=n["user_name"],
+                    deadline=n.get("deadline"),
+                    priority=n.get("priority"),
+                    image_url=n.get("image_url"),
+                    image_caption=n.get("image_caption"),
+                )
+                for n in notes
+            ]
 
 
 def _get_all_notes_mongo(
     with_image: bool,
     with_caption: bool,
     priority: Optional[Priority],
-) -> List[NoteBase]:
+) -> List[NoteWithDetails]:
     """Get all notes from MongoDB database with filters."""
     with get_db() as db:
         pipeline = []
@@ -153,11 +171,56 @@ def _get_all_notes_mongo(
         if priority is not None:
             pipeline.append({"$match": {"priority": priority.value}})
 
-        pipeline.append({"$project": {"_id": 1, "name": 1}})
+        # Lookup folder to get folder name and user_id
+        pipeline.append({
+            "$lookup": {
+                "from": "folders",
+                "localField": "folder_id",
+                "foreignField": "_id",
+                "as": "folder"
+            }
+        })
+        pipeline.append({"$unwind": "$folder"})
+
+        # Lookup user to get user name
+        pipeline.append({
+            "$lookup": {
+                "from": "users",
+                "localField": "folder.user_id",
+                "foreignField": "_id",
+                "as": "user"
+            }
+        })
+        pipeline.append({"$unwind": "$user"})
+
+        # Project all needed fields
+        pipeline.append({
+            "$project": {
+                "_id": 1,
+                "name": 1,
+                "content": 1,
+                "folder_name": "$folder.name",
+                "user_name": "$user.name",
+                "deadline": 1,
+                "priority": 1,
+                "image_url": "$image.url",
+                "image_caption": "$image.caption",
+            }
+        })
 
         notes_cursor = db.notes.aggregate(pipeline)
         return [
-            NoteBase(id=str(n["_id"]), name=n["name"])
+            NoteWithDetails(
+                id=str(n["_id"]),
+                name=n["name"],
+                content=n["content"],
+                folder_name=n["folder_name"],
+                user_name=n["user_name"],
+                deadline=n.get("deadline"),
+                priority=n.get("priority"),
+                image_url=n.get("image_url"),
+                image_caption=n.get("image_caption"),
+            )
             for n in notes_cursor
         ]
 

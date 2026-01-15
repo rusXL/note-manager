@@ -78,6 +78,9 @@ def _init_mongo_db():
     db.notes.create_index("image")
     db.notes.create_index("image.caption")
 
+    # index for efficient folder -> user lookup
+    db.folders.create_index("user_id")
+
     client.close()
 
 

@@ -40,6 +40,18 @@ class NoteBase(BaseModel):
     name: str
 
 
+class NoteWithDetails(NoteBase):
+    content: str
+    folder_name: str
+    user_name: str
+    # task note fields
+    deadline: Optional[date] = None
+    priority: Optional[Priority] = None
+    # image fields
+    image_url: Optional[str] = None
+    image_caption: Optional[str] = None
+
+
 class Note(NoteBase):
     folder_id: str
     content: str
