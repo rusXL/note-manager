@@ -3,20 +3,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Folder as FolderIcon, ChevronLeft } from "lucide-react";
+import {
+  Folder as FolderIcon,
+  ChevronLeft,
+  FileText,
+  Home,
+} from "lucide-react";
 import { getFolder, Folder } from "@/lib/api";
 import { NoteItem } from "@/components/note-item";
 import { CreateNoteDialog } from "@/components/create-note-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export default function FolderPage() {
   const params = useParams();
@@ -27,26 +23,16 @@ export default function FolderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter states
-  const [withImage, setWithImage] = useState(false);
-  const [withCaption, setWithCaption] = useState(false);
-  const [priority, setPriority] = useState<string>("all"); // "all" | "0" | "1" | "2"
-
   const fetchFolder = useCallback(async () => {
     try {
-      const priorityVal = priority === "all" ? null : Number(priority);
-      const data = await getFolder(folderId, {
-        with_image: withImage,
-        with_caption: withCaption,
-        priority: priorityVal,
-      });
+      const data = await getFolder(folderId);
       setFolder(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load folder");
     } finally {
       setLoading(false);
     }
-  }, [folderId, withImage, withCaption, priority]);
+  }, [folderId]);
 
   useEffect(() => {
     fetchFolder();
@@ -102,9 +88,19 @@ export default function FolderPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push("/")}
-            className="shrink-0"
+            onClick={() => router.push("/all-notes")}
+            className="shrink-0 gap-1"
           >
+            <FileText className="h-4 w-4" />
+            All Notes
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/")}
+            className="shrink-0 gap-1"
+          >
+            <Home className="h-4 w-4" />
             Home
           </Button>
         </div>
@@ -129,38 +125,6 @@ export default function FolderPage() {
           </div>
         )}
       </header>
-
-      {/* Filters */}
-      <div className="flex items-center gap-4 p-4 border-b bg-muted/20 overflow-x-auto">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="with-image"
-            checked={withImage}
-            onCheckedChange={(checked) => setWithImage(checked as boolean)}
-          />
-          <Label
-            htmlFor="with-image"
-            className="whitespace-nowrap cursor-pointer"
-          >
-            Image
-          </Label>
-        </div>
-
-        <div className="flex items-center gap-2 ml-auto">
-          <Label className="whitespace-nowrap">Priority:</Label>
-          <Select value={priority} onValueChange={setPriority}>
-            <SelectTrigger className="w-[100px] h-8">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="0">High</SelectItem>
-              <SelectItem value="1">Mid</SelectItem>
-              <SelectItem value="2">Low</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
 
       {/* Notes list */}
       <main className="flex-1 p-4 space-y-3 overflow-y-auto">

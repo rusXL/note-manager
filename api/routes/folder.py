@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from typing import Optional
-from models import Folder, FolderBase, NoteBase, Priority, CreateFolder
+from models import Folder, FolderBase, NoteBase, CreateFolder
 
 from database import get_db, is_sql_mode
 from bson import ObjectId
@@ -9,23 +8,15 @@ router = APIRouter()
 
 
 @router.get("/folder/{folder_id}", response_model=Folder)
-def get_folder(
-    folder_id: str,
-    with_image: bool = False,
-    priority: Optional[Priority] = None,
-):
+def get_folder(folder_id: str):
     """Get folder (name, color, subfolders and notes)."""
     if is_sql_mode():
-        return _get_folder_sql(int(folder_id), with_image, priority)
+        return _get_folder_sql(int(folder_id))
     else:
-        return _get_folder_mongo(folder_id, with_image, priority)
+        return _get_folder_mongo(folder_id)
 
 
-def _get_folder_sql(
-    folder_id: int,
-    with_image: bool,
-    priority: Optional[Priority],
-) -> Folder:
+def _get_folder_sql(folder_id: int) -> Folder:
     with get_db() as conn:
         with conn.cursor(dictionary=True) as cur:
             # get the folder
@@ -42,26 +33,14 @@ def _get_folder_sql(
             cur.execute(
                 "SELECT id, name, color FROM folder WHERE parent_folder_id = %s",
                 (folder_id,),
-            )  # no need for description
+            )
             subfolders = cur.fetchall()
 
-            # get notes (with filters)
-            query = "SELECT n.id, n.name FROM note n"
-            params = [folder_id]
-            joins = []
-            conditions = ["n.folder_id = %s"]
-
-            if with_image:
-                joins.append("JOIN image i ON n.id = i.note_id")
-
-            if priority is not None:
-                joins.append("JOIN task_note t ON n.id = t.note_id")
-                conditions.append("t.priority = %s")
-                params.append(priority.value)
-
-            full_query = f"{query} {' '.join(joins)} WHERE {' AND '.join(conditions)}"
-
-            cur.execute(full_query, tuple(params))
+            # get all notes in folder
+            cur.execute(
+                "SELECT id, name FROM note WHERE folder_id = %s",
+                (folder_id,),
+            )
             notes = cur.fetchall()
 
             return Folder(
@@ -82,11 +61,7 @@ def _get_folder_sql(
             )
 
 
-def _get_folder_mongo(
-    folder_id: str,
-    with_image: bool,
-    priority: Optional[Priority],
-) -> Folder:
+def _get_folder_mongo(folder_id: str) -> Folder:
     """Get folder from MongoDB database."""
     with get_db() as db:
         folder_doc = db.folders.find_one({"_id": ObjectId(folder_id)})
@@ -96,43 +71,21 @@ def _get_folder_mongo(
 
         # get embedded subfolders
         subfolders_data = folder_doc.get("folders", [])
-        subfolders = []
-        for sf in subfolders_data:
-            subfolders.append(
-                FolderBase(
-                    id=str(sf["_id"]),
-                    name=sf["name"],
-                    color=sf["color"],
-                )
+        subfolders = [
+            FolderBase(
+                id=str(sf["_id"]),
+                name=sf["name"],
+                color=sf["color"],
             )
+            for sf in subfolders_data
+        ]
 
-        # use embedded notes when no filters (faster), query collection when filters applied
-        if not with_image and priority is None:
-            notes_data = folder_doc.get("notes", [])
-            notes = [
-                NoteBase(id=str(n["_id"]), name=n["name"])
-                for n in notes_data
-            ]
-        else:
-            note_query = {"folder_id": ObjectId(folder_id)}
-
-            # build pipeline for filtering
-            pipeline = [{"$match": note_query}]
-
-            if with_image:
-                # filter for notes that have image
-                pipeline.append({"$match": {"image": {"$exists": True, "$ne": None}}})
-
-            if priority is not None:
-                pipeline.append({"$match": {"priority": priority.value}})
-
-            pipeline.append({"$project": {"_id": 1, "name": 1}})
-
-            notes_cursor = db.notes.aggregate(pipeline)
-            notes = [
-                NoteBase(id=str(n["_id"]), name=n["name"])
-                for n in notes_cursor
-            ]
+        # get embedded notes
+        notes_data = folder_doc.get("notes", [])
+        notes = [
+            NoteBase(id=str(n["_id"]), name=n["name"])
+            for n in notes_data
+        ]
 
         return Folder(
             id=str(folder_doc["_id"]),

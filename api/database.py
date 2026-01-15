@@ -72,13 +72,11 @@ def _init_mongo_db():
     db.folders.drop()
     db.notes.drop()
 
-    # Create indexes for efficient note filtering
-    # Index on folder_id for folder-based queries
+    # indexes for efficient note filtering
     db.notes.create_index("folder_id")
-    # Compound index for filtering by folder + priority
-    db.notes.create_index([("folder_id", 1), ("priority", 1)])
-    # Compound index for filtering by folder + image existence
-    db.notes.create_index([("folder_id", 1), ("image", 1)])
+    db.notes.create_index("priority")
+    db.notes.create_index("image")
+    db.notes.create_index("image.caption")
 
     client.close()
 

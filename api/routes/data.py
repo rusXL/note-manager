@@ -35,9 +35,9 @@ def init():
 
     add_folder(
         CreateFolder(
-            name="All Notes",
+            name="Important Notes",
             color="#9b59b6",
-            description="Default folder for all notes",
+            description="Default folder for important notes",
             user_id=user_id,
             parent_folder_id=root_folder_id,
         )

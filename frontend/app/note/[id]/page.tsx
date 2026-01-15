@@ -91,14 +91,6 @@ export default function NotePage() {
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold truncate">{note.name}</h1>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/")}
-            className="shrink-0"
-          >
-            Home
-          </Button>
         </div>
       </header>
 
