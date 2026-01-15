@@ -61,7 +61,7 @@ def _init_sql_db():
 
 
 def _init_mongo_db():
-    """Initialize MongoDB database (drops existing collections)."""
+    """Initialize MongoDB database with explicit schema validation."""
     client = pymongo.MongoClient(
         MONGO_CONFIG["uri"], serverSelectionTimeoutMS=MONGO_CONFIG["timeout"]
     )
@@ -71,6 +71,95 @@ def _init_mongo_db():
     db.users.drop()
     db.folders.drop()
     db.notes.drop()
+
+    # users collection
+    db.create_collection("users", validator={
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["email", "password", "name"],
+            "properties": {
+                "email": {"bsonType": "string"},
+                "password": {"bsonType": "string"},
+                "name": {"bsonType": "string"},
+                "folders": {
+                    "bsonType": "array",
+                    "items": {
+                        "bsonType": "object",
+                        "required": ["_id", "name", "color"],
+                        "properties": {
+                            "_id": {"bsonType": "objectId"},
+                            "name": {"bsonType": "string"},
+                            "color": {"bsonType": "string"}
+                        }
+                    }
+                }
+            }
+        }
+    })
+
+    # folders collection
+    db.create_collection("folders", validator={
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["name", "color", "user_id"],
+            "properties": {
+                "name": {"bsonType": "string"},
+                "color": {"bsonType": "string"},
+                "description": {"bsonType": ["string", "null"]},
+                "user_id": {"bsonType": "objectId"},
+                "parent_folder_id": {"bsonType": ["objectId", "null"]},
+                "folders": {
+                    "bsonType": "array",
+                    "items": {
+                        "bsonType": "object",
+                        "required": ["_id", "name", "color"],
+                        "properties": {
+                            "_id": {"bsonType": "objectId"},
+                            "name": {"bsonType": "string"},
+                            "color": {"bsonType": "string"}
+                        }
+                    }
+                },
+                "notes": {
+                    "bsonType": "array",
+                    "items": {
+                        "bsonType": "object",
+                        "required": ["_id", "name"],
+                        "properties": {
+                            "_id": {"bsonType": "objectId"},
+                            "name": {"bsonType": "string"}
+                        }
+                    }
+                }
+            }
+        }
+    })
+
+    # notes collection
+    db.create_collection("notes", validator={
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["name", "content", "folder_id"],
+            "properties": {
+                "name": {"bsonType": "string"},
+                "content": {"bsonType": "string"},
+                "folder_id": {"bsonType": "objectId"},
+                "deadline": {"bsonType": ["string", "null"]},
+                "priority": {
+                    "bsonType": ["int", "null"],
+                    "enum": [None, 0, 1, 2]
+                },
+                "image": {
+                    "bsonType": ["object", "null"],
+                    "properties": {
+                        "url": {"bsonType": "string"},
+                        "caption": {"bsonType": ["string", "null"]}
+                    },
+                    "required": ["url"]
+                }
+            }
+        }
+    })
 
     # indexes for efficient note filtering
     db.notes.create_index("folder_id")
