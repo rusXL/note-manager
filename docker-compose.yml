@@ -40,8 +40,6 @@ services:
       MYSQL_DATABASE: note_manager
       MYSQL_USER: note_manager
       MYSQL_PASSWORD: root
-    ports:
-      - "3306:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
       interval: 5s
@@ -50,5 +48,3 @@ services:
 
   mongo_db:
     image: mongo:6.0
-    ports:
-      - "27017:27017"
