@@ -161,14 +161,8 @@ def _init_mongo_db():
         }
     })
 
-    # indexes for efficient note filtering
-    db.notes.create_index("folder_id")
+    db.notes.create_index("image.caption", sparse=True)
     db.notes.create_index("priority")
-    db.notes.create_index("image")
-    db.notes.create_index("image.caption")
-
-    # index for efficient folder -> user lookup
-    db.folders.create_index("user_id")
 
     client.close()
 

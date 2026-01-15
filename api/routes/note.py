@@ -166,7 +166,7 @@ def _get_all_notes_mongo(
             pipeline.append({"$match": {"image": {"$exists": True, "$ne": None}}})
 
         if with_caption:
-            pipeline.append({"$match": {"image.caption": {"$exists": True, "$ne": None, "$ne": ""}}})
+            pipeline.append({"$match": {"image.caption": {"$exists": True}}})
 
         if priority is not None:
             pipeline.append({"$match": {"priority": priority.value}})
